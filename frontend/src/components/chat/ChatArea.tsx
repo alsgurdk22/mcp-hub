@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Loader2, Wrench } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useToolboxStore } from '@/stores/toolbox'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { chatApi } from '@/lib/api'
 import type { Message, ToolCall } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -38,68 +41,86 @@ export function ChatArea({ messages, onSendMessage, onToolCall }: ChatAreaProps)
 
     setIsTyping(true)
 
-    setTimeout(() => {
-      const randomServer =
-        activeServersList[Math.floor(Math.random() * activeServersList.length)]
-      if (randomServer) {
-        const randomTool =
-          randomServer.tools[
-            Math.floor(Math.random() * randomServer.tools.length)
-          ]
+    try {
+      // Get active tools info
+      const activeTools = activeServersList.flatMap((server) =>
+        server.tools.map((tool) => ({
+          serverId: server.id,
+          serverName: server.name,
+          toolName: tool.name,
+        }))
+      )
 
-        onToolCall({
-          serverId: randomServer.id,
-          serverName: randomServer.name,
-          toolName: randomTool.name,
-          status: 'pending',
-        })
+      // Call Mock AI
+      const result = await chatApi.sendMessage(
+        [...messages, { role: 'user', content: userMessage }],
+        activeTools
+      )
 
-        setTimeout(() => {
+      // Handle tool calls if any
+      if (result.toolCalls && result.toolCalls.length > 0) {
+        for (const tc of result.toolCalls) {
+          // First show pending
           onToolCall({
-            serverId: randomServer.id,
-            serverName: randomServer.name,
-            toolName: randomTool.name,
-            status: 'success',
-            executionTime: 0.8,
-            input: { query: userMessage },
-            output: { result: '성공적으로 실행되었습니다' },
+            serverId: tc.serverId,
+            serverName: tc.serverName,
+            toolName: tc.toolName,
+            status: 'pending',
           })
 
-          onSendMessage({
-            role: 'assistant',
-            content: `${randomTool.name} 도구를 사용하여 요청을 처리했습니다. 결과를 확인해보세요!`,
-            toolCalls: [
-              {
-                id: Date.now().toString(),
-                serverId: randomServer.id,
-                serverName: randomServer.name,
-                toolName: randomTool.name,
-                status: 'success',
-                executionTime: 0.8,
-              },
-            ],
-          })
-
-          setIsTyping(false)
-        }, 1500)
-      } else {
-        onSendMessage({
-          role: 'assistant',
-          content:
-            '도구함에 활성화된 서버가 없습니다. 먼저 MCP 서버를 추가하고 활성화해주세요.',
-        })
-        setIsTyping(false)
+          // Then show success with results
+          setTimeout(() => {
+            onToolCall({
+              serverId: tc.serverId,
+              serverName: tc.serverName,
+              toolName: tc.toolName,
+              status: 'success',
+              executionTime: 0.5 + Math.random() * 0.5,
+              input: tc.input,
+              output: tc.output,
+            })
+          }, 500)
+        }
       }
-    }, 500)
+
+      // Add assistant response
+      onSendMessage({
+        role: 'assistant',
+        content: result.response,
+        toolCalls: result.toolCalls?.map((tc) => ({
+          id: Date.now().toString() + Math.random(),
+          serverId: tc.serverId,
+          serverName: tc.serverName,
+          toolName: tc.toolName,
+          status: 'success' as const,
+          executionTime: 0.5 + Math.random() * 0.5,
+          input: tc.input,
+          output: tc.output,
+        })),
+      })
+    } catch (error) {
+      onSendMessage({
+        role: 'assistant',
+        content: '죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.',
+      })
+    } finally {
+      setIsTyping(false)
+    }
   }
 
   const getSuggestedPrompts = () => {
-    if (activeServersList.length === 0) return []
+    if (activeServersList.length === 0) {
+      return [
+        '안녕하세요!',
+        'MCP Hub가 뭔가요?',
+        '어떤 기능을 제공하나요?',
+      ]
+    }
 
     return [
-      '카카오맵에서 강남역 주변 맛집 찾아줘',
-      '오늘 날씨 알려줘',
-      'GitHub에서 MCP 관련 저장소 검색해줘',
+      '오늘 서울 날씨 알려줘',
+      '현재 디렉토리의 파일 목록 보여줘',
+      '최신 기술 트렌드 검색해줘',
     ]
   }
 
@@ -129,25 +150,23 @@ export function ChatArea({ messages, onSendMessage, onToolCall }: ChatAreaProps)
             <p className="text-muted-foreground mb-6 text-center max-w-md">
               {activeToolsCount > 0
                 ? 'MCP 도구를 활용하여 AI와 대화할 수 있습니다'
-                : '먼저 도구함에 MCP 서버를 추가하고 활성화하세요'}
+                : '도구함에 MCP 서버를 추가하면 더 많은 기능을 사용할 수 있습니다'}
             </p>
 
-            {getSuggestedPrompts().length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground text-center mb-3">
-                  추천 프롬프트:
-                </p>
-                {getSuggestedPrompts().map((prompt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setInput(prompt)}
-                    className="block w-full px-4 py-2 bg-card border border-border rounded-lg text-left hover:border-primary transition-colors text-sm"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground text-center mb-3">
+                추천 프롬프트:
+              </p>
+              {getSuggestedPrompts().map((prompt, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInput(prompt)}
+                  className="block w-full px-4 py-2 bg-card border border-border rounded-lg text-left hover:border-primary transition-colors text-sm"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <>
@@ -167,19 +186,27 @@ export function ChatArea({ messages, onSendMessage, onToolCall }: ChatAreaProps)
                       : 'bg-card border border-border'
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
+                  {message.role === 'assistant' ? (
+                    <div className="prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  )}
 
                   {message.toolCalls && message.toolCalls.length > 0 && (
                     <div className="mt-3 space-y-2">
-                      {message.toolCalls.map((toolCall) => (
+                      {message.toolCalls.map((toolCall, idx) => (
                         <div
-                          key={toolCall.id}
+                          key={toolCall.id || idx}
                           className="p-3 bg-input border-l-2 border-primary rounded"
                         >
                           <div className="flex items-center gap-2 mb-1">
                             <Wrench className="w-4 h-4 text-primary" />
                             <span className="text-sm font-medium text-foreground">
-                              Tool Called: {toolCall.toolName}
+                              {toolCall.toolName}
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground">
@@ -188,7 +215,7 @@ export function ChatArea({ messages, onSendMessage, onToolCall }: ChatAreaProps)
                           <div className="text-xs mt-1">
                             {toolCall.status === 'success' && (
                               <span className="text-success">
-                                ✅ Success ({toolCall.executionTime}s)
+                                ✅ Success ({toolCall.executionTime?.toFixed(2)}s)
                               </span>
                             )}
                             {toolCall.status === 'pending' && (
@@ -218,7 +245,7 @@ export function ChatArea({ messages, onSendMessage, onToolCall }: ChatAreaProps)
                 <div className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Thinking...</span>
+                    <span>생각 중...</span>
                   </div>
                 </div>
               </div>

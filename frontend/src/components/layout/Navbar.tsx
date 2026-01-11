@@ -1,13 +1,19 @@
-import { Link, useLocation } from '@tanstack/react-router'
-import { Search, User, Menu, Wrench, X } from 'lucide-react'
+import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import { Search, Menu, Wrench, X, LogOut, LogIn } from 'lucide-react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useToolboxStore } from '@/stores/toolbox'
+import { useAuthStore } from '@/stores/auth'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 export function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { servers, getTotalToolsCount } = useToolboxStore()
+  const { isAuthenticated, user, logout } = useAuthStore()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
 
   const totalTools = getTotalToolsCount()
 
@@ -19,8 +25,15 @@ export function Navbar() {
     { path: '/servers', label: '서버 둘러보기' },
     { path: '/chat', label: 'AI 채팅' },
     { path: '/register', label: '서버 등록' },
-    { path: '/admin', label: '관리자' },
+    ...(user?.role === 'Admin' ? [{ path: '/admin', label: '관리자' }] : []),
   ]
+
+  const handleLogout = async () => {
+    await logout()
+    toast.success('로그아웃 되었습니다')
+    setIsUserMenuOpen(false)
+    navigate({ to: '/' })
+  }
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-50">
@@ -72,9 +85,56 @@ export function Navbar() {
             )}
 
             {/* User Menu */}
-            <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-input rounded-md transition-colors">
-              <User className="w-5 h-5" />
-            </button>
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 p-2 text-muted-foreground hover:text-foreground hover:bg-input rounded-md transition-colors"
+                >
+                  <div className="w-7 h-7 bg-primary/20 rounded-full flex items-center justify-center text-primary text-sm font-medium">
+                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <span className="hidden lg:block text-sm font-medium">
+                    {user?.username}
+                  </span>
+                </button>
+
+                {/* Dropdown */}
+                {isUserMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-lg z-50">
+                      <div className="p-3 border-b border-border">
+                        <p className="font-medium truncate">{user?.username}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user?.email}
+                        </p>
+                        <p className="text-xs text-primary mt-1">{user?.role}</p>
+                      </div>
+                      <div className="p-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-input rounded-md transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          로그아웃
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <Link to="/login">
+                <Button variant="secondary" size="sm">
+                  <LogIn className="w-4 h-4 mr-2" />
+                  로그인
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile Menu Button */}
             <button
@@ -110,6 +170,15 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+            {!isAuthenticated && (
+              <Link
+                to="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="block px-3 py-2 rounded-md text-base font-medium text-primary"
+              >
+                로그인
+              </Link>
+            )}
           </div>
         </div>
       )}

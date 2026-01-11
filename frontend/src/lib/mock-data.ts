@@ -1,4 +1,4 @@
-import type { MCPServer } from '@/types'
+import type { MCPServer, User } from '@/types'
 
 export const mockServers: MCPServer[] = [
   {
@@ -354,41 +354,50 @@ export const mockStats = {
   offlineServers: 23,
 }
 
-export const mockUsers = [
+export const mockUsers: User[] = [
   {
     id: '1',
     username: 'developer1',
     email: 'dev1@example.com',
-    role: 'Developer' as const,
+    role: 'Developer',
     serversCount: 3,
     lastActive: '2시간 전',
-    status: 'Active' as const,
+    status: 'Active',
   },
   {
     id: '2',
     username: 'admin_user',
     email: 'admin@example.com',
-    role: 'Admin' as const,
+    role: 'Admin',
     serversCount: 0,
     lastActive: '5분 전',
-    status: 'Active' as const,
+    status: 'Active',
   },
   {
     id: '3',
     username: 'kakao_dev',
     email: 'kakao@example.com',
-    role: 'Developer' as const,
+    role: 'Developer',
     serversCount: 1,
     lastActive: '1일 전',
-    status: 'Active' as const,
+    status: 'Active',
   },
   {
     id: '4',
     username: 'suspended_user',
     email: 'suspended@example.com',
-    role: 'User' as const,
+    role: 'User',
     serversCount: 0,
     lastActive: '1주 전',
-    status: 'Suspended' as const,
+    status: 'Suspended',
+  },
+  {
+    id: '5',
+    username: 'pending_user',
+    email: 'pending@example.com',
+    role: 'Developer',
+    serversCount: 0,
+    lastActive: '방금',
+    status: 'Pending',
   },
 ]

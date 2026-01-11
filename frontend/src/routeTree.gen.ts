@@ -9,7 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ServersIndexRouteImport } from './routes/servers/index'
@@ -20,9 +22,19 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminServersRouteImport } from './routes/admin/servers'
 import { Route as AdminMonitoringRouteImport } from './routes/admin/monitoring'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -74,7 +86,9 @@ const AdminMonitoringRoute = AdminMonitoringRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/signup': typeof SignupRoute
   '/admin/monitoring': typeof AdminMonitoringRoute
   '/admin/servers': typeof AdminServersRoute
   '/admin/users': typeof AdminUsersRoute
@@ -86,7 +100,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/signup': typeof SignupRoute
   '/admin/monitoring': typeof AdminMonitoringRoute
   '/admin/servers': typeof AdminServersRoute
   '/admin/users': typeof AdminUsersRoute
@@ -99,7 +115,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/signup': typeof SignupRoute
   '/admin/monitoring': typeof AdminMonitoringRoute
   '/admin/servers': typeof AdminServersRoute
   '/admin/users': typeof AdminUsersRoute
@@ -113,7 +131,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chat'
+    | '/login'
     | '/register'
+    | '/signup'
     | '/admin/monitoring'
     | '/admin/servers'
     | '/admin/users'
@@ -125,7 +145,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chat'
+    | '/login'
     | '/register'
+    | '/signup'
     | '/admin/monitoring'
     | '/admin/servers'
     | '/admin/users'
@@ -137,7 +159,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/chat'
+    | '/login'
     | '/register'
+    | '/signup'
     | '/admin/monitoring'
     | '/admin/servers'
     | '/admin/users'
@@ -150,7 +174,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
+  LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  SignupRoute: typeof SignupRoute
   AdminMonitoringRoute: typeof AdminMonitoringRoute
   AdminServersRoute: typeof AdminServersRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -162,11 +188,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -238,7 +278,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatRoute: ChatRoute,
+  LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  SignupRoute: SignupRoute,
   AdminMonitoringRoute: AdminMonitoringRoute,
   AdminServersRoute: AdminServersRoute,
   AdminUsersRoute: AdminUsersRoute,
