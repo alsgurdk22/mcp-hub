@@ -20,6 +20,7 @@ const router = createRouter({
   routeTree,
   context: {},
   defaultPreload: 'intent',
+  basepath: import.meta.env.BASE_URL,
 })
 
 declare module '@tanstack/react-router' {
