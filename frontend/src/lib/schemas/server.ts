@@ -25,9 +25,7 @@ export const serverDetailsSchema = z.object({
     .string()
     .min(1, '엔드포인트 URL을 입력해주세요')
     .url('올바른 URL 형식이 아닙니다'),
-  authMethod: z.enum(['none', 'apikey', 'oauth'], {
-    errorMap: () => ({ message: '인증 방식을 선택해주세요' }),
-  }),
+  authMethod: z.enum(['none', 'apikey', 'oauth']),
   license: z.string().optional(),
   githubUrl: z
     .string()
