@@ -8,8 +8,8 @@ const ReactCompilerConfig = {
   target: '19',
 }
 
-export default defineConfig({
-  base: '/mcp-hub/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/mcp-hub/' : '/',
   plugins: [
     TanStackRouterVite({
       routesDirectory: './src/routes',
@@ -27,4 +27,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-})
+}))
