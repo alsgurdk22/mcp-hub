@@ -9,6 +9,7 @@ const ReactCompilerConfig = {
 }
 
 export default defineConfig({
+  base: '/mcp-hub/',
   plugins: [
     TanStackRouterVite({
       routesDirectory: './src/routes',
